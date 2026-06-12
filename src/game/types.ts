@@ -19,6 +19,7 @@ export type GameEvent =
   | "numberPlaced"
   | "noteToggled"
   | "mistake"
+  | "conflict"
   | "cellCleared"
   | "undo"
   | "unitCompleted"

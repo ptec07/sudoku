@@ -51,6 +51,25 @@ describe("Sudoku engine", () => {
     expect(result.events).toContain("mistake");
   });
 
+  it("rejects visible row, column, or box conflicts before committing a digit", () => {
+    const rowConflict = selectCell(createInitialState(puzzle, solution), 2).state;
+    const rowResult = placeNumber(rowConflict, 5);
+
+    const columnConflict = selectCell(createInitialState(puzzle, solution), 10).state;
+    const columnResult = placeNumber(columnConflict, 9);
+
+    const boxConflict = selectCell(createInitialState(puzzle, solution), 11).state;
+    const boxResult = placeNumber(boxConflict, 5);
+
+    expect(rowResult.state.cells[2]).toMatchObject({ value: null, mistake: true });
+    expect(rowResult.state.mistakesRemaining).toBe(2);
+    expect(rowResult.events).toEqual(["conflict", "mistake"]);
+    expect(columnResult.state.cells[10]).toMatchObject({ value: null, mistake: true });
+    expect(columnResult.events).toEqual(["conflict", "mistake"]);
+    expect(boxResult.state.cells[11]).toMatchObject({ value: null, mistake: true });
+    expect(boxResult.events).toEqual(["conflict", "mistake"]);
+  });
+
   it("accepts a correct number after a previous mistake in the same cell", () => {
     const state = selectCell(createInitialState(puzzle, solution), 2).state;
     const mistaken = placeNumber(state, 5).state;

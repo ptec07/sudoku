@@ -14,7 +14,7 @@ import {
   undo,
 } from "./game/engine";
 import { createPuzzle } from "./game/puzzle";
-import { canUndo, getCellViews } from "./game/selectors";
+import { canUndo, getBlockedDigits, getCellViews } from "./game/selectors";
 import type { CellIndex, Digit, EngineResult, GameState } from "./game/types";
 
 function createNewGame(): GameState {
@@ -27,6 +27,10 @@ function App() {
   const [lastEvents, setLastEvents] = useState<string[]>([]);
 
   const cells = useMemo(() => getCellViews(game), [game]);
+  const blockedDigits = useMemo(
+    () => (game.notesMode ? [] : getBlockedDigits(game)),
+    [game],
+  );
   const mistakesUsed = 3 - game.mistakesRemaining;
   const inputDisabled = game.completed || game.mistakesRemaining === 0;
 
@@ -129,7 +133,12 @@ function App() {
       </header>
 
       <Board cells={cells} onSelect={handleSelect} />
-      <Keypad disabled={inputDisabled} onClear={handleClear} onDigit={handleDigit} />
+      <Keypad
+        blockedDigits={blockedDigits}
+        disabled={inputDisabled}
+        onClear={handleClear}
+        onDigit={handleDigit}
+      />
 
       <section className="status-row" aria-label="Feedback status">
         <span>Sound: {game.muted ? "muted" : "soft taps"}</span>

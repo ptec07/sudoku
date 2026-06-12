@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState, placeNumber, selectCell } from "./engine";
 import { puzzle, solution } from "./puzzle";
-import { areRelated, canUndo, getCellViews, toRowCol } from "./selectors";
+import { areRelated, canUndo, getBlockedDigits, getCellViews, toRowCol } from "./selectors";
 
 describe("Sudoku selectors", () => {
   it("maps cell index to row and column", () => {
@@ -41,5 +41,19 @@ describe("Sudoku selectors", () => {
 
     expect(canUndo(initial)).toBe(false);
     expect(canUndo(placed)).toBe(true);
+  });
+
+  it("reports visible conflicting digits for the selected editable cell", () => {
+    const state = selectCell(createInitialState(puzzle, solution), 2).state;
+
+    expect(getBlockedDigits(state)).toEqual([3, 5, 6, 7, 8, 9]);
+  });
+
+  it("does not block keypad digits when no editable cell is selected", () => {
+    const initial = createInitialState(puzzle, solution);
+    const selectedGiven = selectCell(initial, 0).state;
+
+    expect(getBlockedDigits(initial)).toEqual([]);
+    expect(getBlockedDigits(selectedGiven)).toEqual([]);
   });
 });

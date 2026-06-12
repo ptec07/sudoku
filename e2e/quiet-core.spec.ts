@@ -11,9 +11,11 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
 
   await editableCell.click();
   await expect(editableCell).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId(`key-${wrongDigit}`)).toBeDisabled();
 
   await page.getByTestId("notes-button").click();
   await expect(page.getByTestId("notes-button")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId(`key-${wrongDigit}`)).toBeEnabled();
   await page.getByTestId("key-4").click();
   await expect(editableCell).toContainText("4");
 
@@ -28,8 +30,9 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
 
   await page.getByTestId("notes-button").click();
   await expect(page.getByTestId("notes-button")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId(`key-${wrongDigit}`)).toBeDisabled();
 
-  await page.getByTestId(`key-${wrongDigit}`).click();
+  await page.keyboard.press(String(wrongDigit));
   await expect(editableCell).toHaveClass(/cell-mistake/);
   await expect(editableCell).toBeEmpty();
   await expect(page.getByText("Mistakes: 1/3")).toBeVisible();

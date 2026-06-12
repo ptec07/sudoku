@@ -73,18 +73,19 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
 
   const nextCells = cloneCells(state.cells);
   const isCorrect = state.solution[selected] === digit;
+  const hasConflict = hasPeerValue(nextCells, selected, digit);
   nextCells[selected] = {
     ...nextCells[selected],
-    value: isCorrect ? digit : null,
+    value: isCorrect && !hasConflict ? digit : null,
     notes: [],
-    mistake: !isCorrect,
+    mistake: !isCorrect || hasConflict,
   };
-  if (isCorrect) {
+  if (isCorrect && !hasConflict) {
     removePeerNotes(nextCells, selected, digit);
   }
 
   const nextBase = pushHistory(state);
-  const mistakesRemaining = isCorrect
+  const mistakesRemaining = isCorrect && !hasConflict
     ? state.mistakesRemaining
     : Math.max(0, state.mistakesRemaining - 1);
   const nextState: GameState = {
@@ -93,7 +94,10 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
     mistakesRemaining,
   };
 
-  const events: GameEvent[] = isCorrect ? ["numberPlaced"] : ["mistake"];
+  const events: GameEvent[] =
+    isCorrect && !hasConflict
+      ? ["numberPlaced"]
+      : [...(hasConflict ? (["conflict"] as const) : []), "mistake"];
   const unitEvents = getNewCompletedUnitEvents(state, nextState);
   const completed = isSolved(nextState);
 
@@ -107,7 +111,7 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
       ...events,
       ...unitEvents,
       ...(completed && !state.completed ? (["puzzleCompleted"] as const) : []),
-      ...(!isCorrect && mistakesRemaining === 0 ? (["gameOver"] as const) : []),
+      ...((!isCorrect || hasConflict) && mistakesRemaining === 0 ? (["gameOver"] as const) : []),
     ],
   };
 }
@@ -230,6 +234,12 @@ function removePeerNotes(cells: Cell[], placedIndex: CellIndex, digit: Digit): v
       };
     }
   });
+}
+
+function hasPeerValue(cells: Cell[], placedIndex: CellIndex, digit: Digit): boolean {
+  return cells.some(
+    (cell, index) => index !== placedIndex && cell.value === digit && arePeers(placedIndex, index),
+  );
 }
 
 function arePeers(a: CellIndex, b: CellIndex): boolean {

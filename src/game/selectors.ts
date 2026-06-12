@@ -1,4 +1,4 @@
-import type { BoardCellView, CellIndex, GameState } from "./types";
+import type { BoardCellView, CellIndex, Digit, GameState } from "./types";
 
 export function toRowCol(index: CellIndex): { row: number; col: number } {
   return {
@@ -46,6 +46,23 @@ export function getCellViews(state: GameState): BoardCellView[] {
 
 export function canUndo(state: GameState): boolean {
   return state.history.length > 0;
+}
+
+export function getBlockedDigits(state: GameState): Digit[] {
+  const selected = state.selected;
+  if (selected === null || state.completed || state.mistakesRemaining === 0) return [];
+
+  const selectedCell = state.cells[selected];
+  if (!selectedCell || selectedCell.given || selectedCell.value !== null) return [];
+
+  const blocked = new Set<Digit>();
+  state.cells.forEach((cell, index) => {
+    if (index !== selected && cell.value !== null && areRelated(selected, index)) {
+      blocked.add(cell.value);
+    }
+  });
+
+  return [...blocked].sort((a, b) => a - b);
 }
 
 function buildCellLabel(
