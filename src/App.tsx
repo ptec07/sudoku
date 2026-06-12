@@ -12,12 +12,17 @@ import {
   setNotesMode,
   undo,
 } from "./game/engine";
-import { puzzle, solution } from "./game/puzzle";
+import { createPuzzle } from "./game/puzzle";
 import { canUndo, getCellViews } from "./game/selectors";
 import type { CellIndex, Digit, EngineResult, GameState } from "./game/types";
 
+function createNewGame(): GameState {
+  const generated = createPuzzle();
+  return createInitialState(generated.puzzle, generated.solution);
+}
+
 function App() {
-  const [game, setGame] = useState<GameState>(() => createInitialState(puzzle, solution));
+  const [game, setGame] = useState<GameState>(() => createNewGame());
   const [lastEvents, setLastEvents] = useState<string[]>([]);
 
   const cells = useMemo(() => getCellViews(game), [game]);
@@ -83,6 +88,14 @@ function App() {
     run((state) => setMuted(state, !state.muted));
   }
 
+  function handleNewGame() {
+    setGame((current) => ({
+      ...createNewGame(),
+      muted: current.muted,
+    }));
+    setLastEvents([]);
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -98,6 +111,7 @@ function App() {
           muted={game.muted}
           notesMode={game.notesMode}
           onMuteToggle={handleMuteToggle}
+          onNewGame={handleNewGame}
           onNotesToggle={handleNotesToggle}
           onUndo={handleUndo}
         />

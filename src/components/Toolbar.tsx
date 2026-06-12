@@ -3,6 +3,7 @@ type ToolbarProps = {
   muted: boolean;
   notesMode: boolean;
   onMuteToggle: () => void;
+  onNewGame: () => void;
   onNotesToggle: () => void;
   onUndo: () => void;
 };
@@ -12,6 +13,7 @@ export function Toolbar({
   muted,
   notesMode,
   onMuteToggle,
+  onNewGame,
   onNotesToggle,
   onUndo,
 }: ToolbarProps) {
@@ -27,6 +29,15 @@ export function Toolbar({
         type="button"
       >
         <UndoIcon />
+      </button>
+      <button
+        aria-label="Start a new puzzle"
+        className="tool-button"
+        data-testid="new-game-button"
+        onClick={onNewGame}
+        type="button"
+      >
+        New
       </button>
       <button
         aria-label="Toggle notes mode"

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState, placeNumber, selectCell, setNotesMode, undo } from "./engine";
-import { puzzle, solution, validatePuzzleShape } from "./puzzle";
+import {
+  createPuzzle,
+  createSeededRandom,
+  puzzle,
+  solution,
+  validatePuzzleShape,
+} from "./puzzle";
 
 describe("Sudoku engine", () => {
   it("creates locked givens and editable empty cells", () => {
@@ -144,5 +150,22 @@ describe("Sudoku engine", () => {
     invalidSolution[0] = 1;
 
     expect(() => validatePuzzleShape(emptyPuzzle, invalidSolution)).toThrow("invalid row");
+  });
+
+  it("generates a valid puzzle with givens that match its solution", () => {
+    const generated = createPuzzle({ random: createSeededRandom(42), clueCount: 36 });
+
+    expect(generated.puzzle).toHaveLength(81);
+    expect(generated.solution).toHaveLength(81);
+    expect(generated.puzzle.filter((value) => value !== null).length).toBeGreaterThanOrEqual(36);
+    expect(() => validatePuzzleShape(generated.puzzle, generated.solution)).not.toThrow();
+  });
+
+  it("varies generated puzzles across seeds", () => {
+    const first = createPuzzle({ random: createSeededRandom(100), clueCount: 36 });
+    const second = createPuzzle({ random: createSeededRandom(101), clueCount: 36 });
+
+    expect(first.puzzle).not.toEqual(second.puzzle);
+    expect(first.solution).not.toEqual(second.solution);
   });
 });
