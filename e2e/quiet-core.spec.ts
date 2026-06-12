@@ -6,6 +6,8 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Quiet Core" })).toBeVisible();
   await expect(page.getByRole("gridcell")).toHaveCount(81);
   await expect(page.getByTestId("difficulty-easy")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Score: 0")).toBeVisible();
+  await expect(page.getByText("Mistakes: 0/5")).toBeVisible();
 
   const easyBoard = await boardText(page);
   await page.getByTestId("difficulty-hard").click();
@@ -24,6 +26,7 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
 
   await page.getByTestId(`key-${playableDigit}`).click();
   await expect(editableCell).toHaveText(String(playableDigit));
+  await expect(page.getByText("Score: 50")).toBeVisible();
 
   await page.getByTestId("erase-button").click();
   await expect(editableCell).toBeEmpty();
@@ -50,7 +53,7 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
   await page.keyboard.press(String(wrongDigit));
   await expect(editableCell).toHaveClass(/cell-mistake/);
   await expect(editableCell).toBeEmpty();
-  await expect(page.getByText("Mistakes: 1/3")).toBeVisible();
+  await expect(page.getByText("Mistakes: 1/5")).toBeVisible();
 
   await page.getByTestId("undo-button").click();
   await expect(editableCell).toBeEmpty();
@@ -60,8 +63,22 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
 
   const beforeNewPuzzle = await boardText(page);
   await page.getByTestId("new-game-button").click();
-  await expect(page.getByText("Mistakes: 0/3")).toBeVisible();
+  await expect(page.getByText("Score: 0")).toBeVisible();
+  await expect(page.getByText("Mistakes: 0/5")).toBeVisible();
   await expect.poll(() => boardText(page)).not.toBe(beforeNewPuzzle);
+
+  const gameOverTarget = await findEditableCellWithWrongDigit(page);
+  const gameOverCell = page.getByTestId(`cell-${gameOverTarget.editableIndex}`);
+  await gameOverCell.click();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await page.keyboard.press(String(gameOverTarget.wrongDigit));
+  }
+
+  await expect(page.getByTestId("game-over-panel")).toBeVisible();
+  await expect(page.getByText("Mistakes: 5/5")).toBeVisible();
+  await page.getByTestId("player-name-input").fill("Mingyu");
+  await page.getByTestId("save-score-button").click();
+  await expect(page.getByTestId("score-record")).toContainText("Mingyu");
 });
 
 async function findEditableCellWithWrongDigit(page: Page): Promise<{

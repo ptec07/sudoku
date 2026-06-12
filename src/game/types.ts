@@ -34,6 +34,7 @@ export type GameState = {
   notesMode: boolean;
   muted: boolean;
   completed: boolean;
+  score: number;
   mistakesRemaining: number;
   history: GameSnapshot[];
   completedUnits: string[];

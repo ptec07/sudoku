@@ -2,6 +2,10 @@ import type { Cell, CellIndex, Digit, EngineResult, GameEvent, GameSnapshot, Gam
 import { validatePuzzleShape } from "./puzzle";
 
 const BOARD_SIZE = 81;
+export const MAX_MISTAKES = 5;
+export const SCORE_PER_NUMBER = 50;
+const SCORE_PER_UNIT = 100;
+const SCORE_COMPLETION_BONUS = 500;
 
 export function isDigit(value: number): value is Digit {
   return Number.isInteger(value) && value >= 1 && value <= 9;
@@ -25,7 +29,8 @@ export function createInitialState(
     notesMode: false,
     muted: false,
     completed: false,
-    mistakesRemaining: 3,
+    score: 0,
+    mistakesRemaining: MAX_MISTAKES,
     history: [],
     completedUnits: [],
   };
@@ -96,10 +101,17 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
   const events: GameEvent[] = hasConflict ? ["conflict", "mistake"] : ["numberPlaced"];
   const unitEvents = getNewCompletedUnitEvents(state, nextState);
   const completed = isSolved(nextState);
+  const score = hasConflict
+    ? state.score
+    : state.score +
+      SCORE_PER_NUMBER +
+      unitEvents.length * SCORE_PER_UNIT +
+      (completed && !state.completed ? SCORE_COMPLETION_BONUS : 0);
 
   return {
     state: {
       ...nextState,
+      score,
       completed,
       completedUnits: getCompletedUnits(nextState),
     },

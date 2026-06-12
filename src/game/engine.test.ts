@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   clearCell,
   createInitialState,
+  MAX_MISTAKES,
   placeNumber,
+  SCORE_PER_NUMBER,
   selectCell,
   setNotesMode,
   undo,
@@ -23,6 +25,8 @@ describe("Sudoku engine", () => {
     expect(state.cells).toHaveLength(81);
     expect(state.cells[0]).toMatchObject({ value: 5, given: true, notes: [] });
     expect(state.cells[2]).toMatchObject({ value: null, given: false, notes: [] });
+    expect(state.score).toBe(0);
+    expect(state.mistakesRemaining).toBe(MAX_MISTAKES);
   });
 
   it("selects a cell without changing the board", () => {
@@ -39,6 +43,7 @@ describe("Sudoku engine", () => {
     const result = placeNumber(state, 4);
 
     expect(result.state.cells[2]).toMatchObject({ value: 4, mistake: false, notes: [] });
+    expect(result.state.score).toBe(SCORE_PER_NUMBER);
     expect(result.events).toContain("numberPlaced");
     expect(result.state.history).toHaveLength(1);
   });
@@ -48,7 +53,8 @@ describe("Sudoku engine", () => {
     const result = placeNumber(state, 1);
 
     expect(result.state.cells[2]).toMatchObject({ value: 1, mistake: false, notes: [] });
-    expect(result.state.mistakesRemaining).toBe(3);
+    expect(result.state.mistakesRemaining).toBe(MAX_MISTAKES);
+    expect(result.state.score).toBe(SCORE_PER_NUMBER);
     expect(result.events).toContain("numberPlaced");
   });
 
@@ -63,7 +69,8 @@ describe("Sudoku engine", () => {
     const boxResult = placeNumber(boxConflict, 5);
 
     expect(rowResult.state.cells[2]).toMatchObject({ value: null, mistake: true });
-    expect(rowResult.state.mistakesRemaining).toBe(2);
+    expect(rowResult.state.mistakesRemaining).toBe(MAX_MISTAKES - 1);
+    expect(rowResult.state.score).toBe(0);
     expect(rowResult.events).toEqual(["conflict", "mistake"]);
     expect(columnResult.state.cells[10]).toMatchObject({ value: null, mistake: true });
     expect(columnResult.events).toEqual(["conflict", "mistake"]);
@@ -77,7 +84,8 @@ describe("Sudoku engine", () => {
     const corrected = placeNumber(mistaken, 4);
 
     expect(corrected.state.cells[2]).toMatchObject({ value: 4, mistake: false });
-    expect(corrected.state.mistakesRemaining).toBe(2);
+    expect(corrected.state.mistakesRemaining).toBe(MAX_MISTAKES - 1);
+    expect(corrected.state.score).toBe(SCORE_PER_NUMBER);
     expect(corrected.events).toContain("numberPlaced");
   });
 
@@ -166,17 +174,20 @@ describe("Sudoku engine", () => {
     expect(result.state.cells[10].notes).toEqual([]);
   });
 
-  it("ignores entries after three mistakes are exhausted", () => {
+  it("ends the game after five visible conflicts are exhausted", () => {
     let state = selectCell(createInitialState(puzzle, solution), 2).state;
-    state = placeNumber(state, 5).state;
-    state = placeNumber(state, 5).state;
-    state = placeNumber(state, 5).state;
+    let result = placeNumber(state, 5);
 
-    const result = placeNumber(state, 4);
+    for (let attempt = 1; attempt < MAX_MISTAKES; attempt += 1) {
+      result = placeNumber(result.state, 5);
+    }
 
-    expect(result.state.cells[2].value).toBeNull();
+    const ignored = placeNumber(result.state, 4);
+
     expect(result.state.mistakesRemaining).toBe(0);
-    expect(result.events).toEqual(["ignored"]);
+    expect(result.events).toContain("gameOver");
+    expect(ignored.state.cells[2].value).toBeNull();
+    expect(ignored.events).toEqual(["ignored"]);
   });
 
   it("ignores edits after the puzzle is completed", () => {
