@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState, placeNumber, selectCell, setNotesMode, undo } from "./engine";
-import { puzzle, solution } from "./puzzle";
+import { puzzle, solution, validatePuzzleShape } from "./puzzle";
 
 describe("Sudoku engine", () => {
   it("creates locked givens and editable empty cells", () => {
@@ -29,13 +29,23 @@ describe("Sudoku engine", () => {
     expect(result.state.history).toHaveLength(1);
   });
 
-  it("marks a wrong number quietly and decrements mistakes", () => {
+  it("marks a wrong number quietly without committing it to the board", () => {
     const state = selectCell(createInitialState(puzzle, solution), 2).state;
     const result = placeNumber(state, 5);
 
-    expect(result.state.cells[2]).toMatchObject({ value: 5, mistake: true });
+    expect(result.state.cells[2]).toMatchObject({ value: null, mistake: true, notes: [] });
     expect(result.state.mistakesRemaining).toBe(2);
     expect(result.events).toContain("mistake");
+  });
+
+  it("accepts a correct number after a previous mistake in the same cell", () => {
+    const state = selectCell(createInitialState(puzzle, solution), 2).state;
+    const mistaken = placeNumber(state, 5).state;
+    const corrected = placeNumber(mistaken, 4);
+
+    expect(corrected.state.cells[2]).toMatchObject({ value: 4, mistake: false });
+    expect(corrected.state.mistakesRemaining).toBe(2);
+    expect(corrected.events).toContain("numberPlaced");
   });
 
   it("does not mutate a given cell", () => {
@@ -117,5 +127,22 @@ describe("Sudoku engine", () => {
     expect(solved.state.completed).toBe(true);
     expect(solved.events).toContain("puzzleCompleted");
     expect(repeated.events).not.toContain("puzzleCompleted");
+  });
+
+  it("rejects a puzzle given that does not match the solution", () => {
+    const mismatchedPuzzle = [...puzzle];
+    mismatchedPuzzle[0] = 1;
+
+    expect(() => validatePuzzleShape(mismatchedPuzzle, solution)).toThrow(
+      "does not match the solution",
+    );
+  });
+
+  it("rejects an invalid solution grid", () => {
+    const emptyPuzzle = Array.from({ length: 81 }, () => null);
+    const invalidSolution = [...solution];
+    invalidSolution[0] = 1;
+
+    expect(() => validatePuzzleShape(emptyPuzzle, invalidSolution)).toThrow("invalid row");
   });
 });

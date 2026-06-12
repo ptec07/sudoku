@@ -31,4 +31,44 @@ export function validatePuzzleShape(
   if (puzzleCells.length !== 81 || solutionCells.length !== 81) {
     throw new Error("Sudoku puzzle and solution must both contain 81 cells.");
   }
+
+  puzzleCells.forEach((value, index) => {
+    if (value !== null && value !== solutionCells[index]) {
+      throw new Error(`Sudoku puzzle given at cell ${index} does not match the solution.`);
+    }
+  });
+
+  validateSolutionUnits(solutionCells);
+}
+
+function validateSolutionUnits(solutionCells: Digit[]): void {
+  for (let row = 0; row < 9; row += 1) {
+    const values = Array.from({ length: 9 }, (_, col) => solutionCells[row * 9 + col]);
+    validateUnit(values, `row ${row + 1}`);
+  }
+
+  for (let col = 0; col < 9; col += 1) {
+    const values = Array.from({ length: 9 }, (_, row) => solutionCells[row * 9 + col]);
+    validateUnit(values, `column ${col + 1}`);
+  }
+
+  for (let boxRow = 0; boxRow < 3; boxRow += 1) {
+    for (let boxCol = 0; boxCol < 3; boxCol += 1) {
+      const values = Array.from({ length: 9 }, (_, offset) => {
+        const row = boxRow * 3 + Math.floor(offset / 3);
+        const col = boxCol * 3 + (offset % 3);
+        return solutionCells[row * 9 + col];
+      });
+      validateUnit(values, `box ${boxRow + 1}-${boxCol + 1}`);
+    }
+  }
+}
+
+function validateUnit(values: Digit[], label: string): void {
+  const expected = "123456789";
+  const actual = [...values].sort((a, b) => a - b).join("");
+
+  if (actual !== expected) {
+    throw new Error(`Sudoku solution has an invalid ${label}.`);
+  }
 }

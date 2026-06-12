@@ -52,6 +52,7 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
 
   await page.getByTestId("key-5").click();
   await expect(page.getByTestId("cell-2")).toHaveClass(/cell-mistake/);
+  await expect(page.getByTestId("cell-2")).toBeEmpty();
   await expect(page.getByText("Mistakes: 1/3")).toBeVisible();
 
   await page.getByTestId("undo-button").click();

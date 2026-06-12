@@ -75,7 +75,7 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
   const isCorrect = state.solution[selected] === digit;
   nextCells[selected] = {
     ...nextCells[selected],
-    value: digit,
+    value: isCorrect ? digit : null,
     notes: [],
     mistake: !isCorrect,
   };

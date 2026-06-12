@@ -24,7 +24,12 @@ describe("Sudoku selectors", () => {
     const views = getCellViews(state);
 
     expect(views[0]).toMatchObject({ selected: true, value: 5 });
-    expect(views[2]).toMatchObject({ related: true, sameNumber: true, mistake: true });
+    expect(views[2]).toMatchObject({
+      related: true,
+      sameNumber: false,
+      value: null,
+      mistake: true,
+    });
     expect(views[40].related).toBe(false);
     expect(views[2].ariaLabel).toContain("marked mistake");
   });
