@@ -43,13 +43,13 @@ describe("Sudoku engine", () => {
     expect(result.state.history).toHaveLength(1);
   });
 
-  it("marks a wrong number quietly without committing it to the board", () => {
+  it("commits a non-conflicting digit even when it is not the solution", () => {
     const state = selectCell(createInitialState(puzzle, solution), 2).state;
-    const result = placeNumber(state, 5);
+    const result = placeNumber(state, 1);
 
-    expect(result.state.cells[2]).toMatchObject({ value: null, mistake: true, notes: [] });
-    expect(result.state.mistakesRemaining).toBe(2);
-    expect(result.events).toContain("mistake");
+    expect(result.state.cells[2]).toMatchObject({ value: 1, mistake: false, notes: [] });
+    expect(result.state.mistakesRemaining).toBe(3);
+    expect(result.events).toContain("numberPlaced");
   });
 
   it("rejects visible row, column, or box conflicts before committing a digit", () => {

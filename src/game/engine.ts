@@ -72,20 +72,19 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
   }
 
   const nextCells = cloneCells(state.cells);
-  const isCorrect = state.solution[selected] === digit;
   const hasConflict = hasPeerValue(nextCells, selected, digit);
   nextCells[selected] = {
     ...nextCells[selected],
-    value: isCorrect && !hasConflict ? digit : null,
+    value: hasConflict ? null : digit,
     notes: [],
-    mistake: !isCorrect || hasConflict,
+    mistake: hasConflict,
   };
-  if (isCorrect && !hasConflict) {
+  if (!hasConflict) {
     removePeerNotes(nextCells, selected, digit);
   }
 
   const nextBase = pushHistory(state);
-  const mistakesRemaining = isCorrect && !hasConflict
+  const mistakesRemaining = !hasConflict
     ? state.mistakesRemaining
     : Math.max(0, state.mistakesRemaining - 1);
   const nextState: GameState = {
@@ -94,10 +93,7 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
     mistakesRemaining,
   };
 
-  const events: GameEvent[] =
-    isCorrect && !hasConflict
-      ? ["numberPlaced"]
-      : [...(hasConflict ? (["conflict"] as const) : []), "mistake"];
+  const events: GameEvent[] = hasConflict ? ["conflict", "mistake"] : ["numberPlaced"];
   const unitEvents = getNewCompletedUnitEvents(state, nextState);
   const completed = isSolved(nextState);
 
@@ -111,7 +107,7 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
       ...events,
       ...unitEvents,
       ...(completed && !state.completed ? (["puzzleCompleted"] as const) : []),
-      ...((!isCorrect || hasConflict) && mistakesRemaining === 0 ? (["gameOver"] as const) : []),
+      ...(hasConflict && mistakesRemaining === 0 ? (["gameOver"] as const) : []),
     ],
   };
 }

@@ -15,12 +15,18 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
   await expect(page.getByLabel("Puzzle status")).toContainText("Hard puzzle");
   await expect.poll(() => boardText(page)).not.toBe(easyBoard);
 
-  const { editableIndex, wrongDigit } = await findEditableCellWithWrongDigit(page);
+  const { editableIndex, playableDigit, wrongDigit } = await findEditableCellWithWrongDigit(page);
   const editableCell = page.getByTestId(`cell-${editableIndex}`);
 
   await editableCell.click();
   await expect(editableCell).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId(`key-${wrongDigit}`)).toBeDisabled();
+
+  await page.getByTestId(`key-${playableDigit}`).click();
+  await expect(editableCell).toHaveText(String(playableDigit));
+
+  await page.getByTestId("erase-button").click();
+  await expect(editableCell).toBeEmpty();
 
   await page.getByTestId("notes-button").click();
   await expect(page.getByTestId("notes-button")).toHaveAttribute("aria-pressed", "true");
@@ -60,6 +66,7 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
 
 async function findEditableCellWithWrongDigit(page: Page): Promise<{
   editableIndex: number;
+  playableDigit: number;
   wrongDigit: number;
 }> {
   return page.evaluate(() => {
@@ -76,10 +83,33 @@ async function findEditableCellWithWrongDigit(page: Page): Promise<{
         .map((rowCell) => Number(rowCell.text))
         .find((digit) => Number.isInteger(digit) && digit >= 1 && digit <= 9);
 
-      if (wrongDigit) return { editableIndex: cell.index, wrongDigit };
+      const blockedDigits = new Set(
+        cells
+          .filter((other) => other.index !== cell.index && other.text !== "" && areRelated(cell.index, other.index))
+          .map((other) => Number(other.text)),
+      );
+      const playableDigit = [1, 2, 3, 4, 5, 6, 7, 8, 9].find((digit) => !blockedDigits.has(digit));
+
+      if (wrongDigit && playableDigit) {
+        return { editableIndex: cell.index, playableDigit, wrongDigit };
+      }
     }
 
     throw new Error("Could not find an editable cell with a row-based wrong digit.");
+
+    function areRelated(firstIndex: number, secondIndex: number): boolean {
+      const firstRow = Math.floor(firstIndex / 9);
+      const firstCol = firstIndex % 9;
+      const secondRow = Math.floor(secondIndex / 9);
+      const secondCol = secondIndex % 9;
+
+      return (
+        firstRow === secondRow ||
+        firstCol === secondCol ||
+        (Math.floor(firstRow / 3) === Math.floor(secondRow / 3) &&
+          Math.floor(firstCol / 3) === Math.floor(secondCol / 3))
+      );
+    }
   });
 }
 
