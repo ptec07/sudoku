@@ -5,6 +5,15 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Quiet Core" })).toBeVisible();
   await expect(page.getByRole("gridcell")).toHaveCount(81);
+  await expect(page.getByTestId("difficulty-easy")).toHaveAttribute("aria-pressed", "true");
+
+  const easyBoard = await boardText(page);
+  await page.getByTestId("difficulty-hard").click();
+  await expect(page.getByTestId("difficulty-hard")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("difficulty-hard")).toHaveClass(/difficulty-button-active/);
+  await expect(page.getByTestId("difficulty-easy")).not.toHaveClass(/difficulty-button-active/);
+  await expect(page.getByLabel("Puzzle status")).toContainText("Hard puzzle");
+  await expect.poll(() => boardText(page)).not.toBe(easyBoard);
 
   const { editableIndex, wrongDigit } = await findEditableCellWithWrongDigit(page);
   const editableCell = page.getByTestId(`cell-${editableIndex}`);

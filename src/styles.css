@@ -79,9 +79,39 @@ h1 {
   align-items: center;
 }
 
+.difficulty-control {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 3px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.difficulty-button {
+  height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.difficulty-button-active {
+  background: var(--color-selected);
+  color: var(--color-same-number);
+}
+
 .tool-button,
 .key,
-.cell {
+.cell,
+.difficulty-button {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -110,7 +140,8 @@ h1 {
 
 .tool-button:focus-visible,
 .key:focus-visible,
-.cell:focus-visible {
+.cell:focus-visible,
+.difficulty-button:focus-visible {
   outline: 3px solid rgba(30, 102, 168, 0.32);
   outline-offset: 2px;
 }

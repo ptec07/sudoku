@@ -10,6 +10,7 @@ import {
 import {
   createPuzzle,
   createSeededRandom,
+  difficultySettings,
   puzzle,
   solution,
   validatePuzzleShape,
@@ -253,5 +254,14 @@ describe("Sudoku engine", () => {
 
     expect(first.puzzle).not.toEqual(second.puzzle);
     expect(first.solution).not.toEqual(second.solution);
+  });
+
+  it("defines difficulty levels by decreasing clue count", () => {
+    expect(difficultySettings.easy.clueCount).toBeGreaterThan(
+      difficultySettings.medium.clueCount,
+    );
+    expect(difficultySettings.medium.clueCount).toBeGreaterThan(
+      difficultySettings.hard.clueCount,
+    );
   });
 });

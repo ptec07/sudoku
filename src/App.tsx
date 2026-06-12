@@ -13,17 +13,23 @@ import {
   setNotesMode,
   undo,
 } from "./game/engine";
-import { createPuzzle } from "./game/puzzle";
+import { createPuzzle, difficultySettings } from "./game/puzzle";
 import { canUndo, getBlockedDigits, getCellViews } from "./game/selectors";
 import type { CellIndex, Digit, EngineResult, GameState } from "./game/types";
+import type { Difficulty } from "./game/puzzle";
 
-function createNewGame(): GameState {
-  const generated = createPuzzle();
+const difficulties = Object.entries(difficultySettings) as Array<
+  [Difficulty, (typeof difficultySettings)[Difficulty]]
+>;
+
+function createNewGame(difficulty: Difficulty): GameState {
+  const generated = createPuzzle({ clueCount: difficultySettings[difficulty].clueCount });
   return createInitialState(generated.puzzle, generated.solution);
 }
 
 function App() {
-  const [game, setGame] = useState<GameState>(() => createNewGame());
+  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
+  const [game, setGame] = useState<GameState>(() => createNewGame("easy"));
   const [lastEvents, setLastEvents] = useState<string[]>([]);
 
   const cells = useMemo(() => getCellViews(game), [game]);
@@ -104,7 +110,16 @@ function App() {
 
   function handleNewGame() {
     setGame((current) => ({
-      ...createNewGame(),
+      ...createNewGame(difficulty),
+      muted: current.muted,
+    }));
+    setLastEvents([]);
+  }
+
+  function handleDifficultyChange(nextDifficulty: Difficulty) {
+    setDifficulty(nextDifficulty);
+    setGame((current) => ({
+      ...createNewGame(nextDifficulty),
       muted: current.muted,
     }));
     setLastEvents([]);
@@ -116,7 +131,8 @@ function App() {
         <div>
           <h1>Quiet Core</h1>
           <p className="meta" aria-label="Puzzle status">
-            Easy puzzle <span aria-hidden="true">·</span> 04:18 <span aria-hidden="true">·</span>{" "}
+            {difficultySettings[difficulty].label} puzzle <span aria-hidden="true">·</span> 04:18{" "}
+            <span aria-hidden="true">·</span>{" "}
             {game.mistakesRemaining} left
           </p>
         </div>
@@ -131,6 +147,26 @@ function App() {
           onUndo={handleUndo}
         />
       </header>
+
+      <section className="difficulty-control" aria-label="Difficulty">
+        {difficulties.map(([level, settings]) => (
+          <button
+            aria-pressed={difficulty === level}
+            className={[
+              "difficulty-button",
+              difficulty === level ? "difficulty-button-active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            data-testid={`difficulty-${level}`}
+            key={level}
+            onClick={() => handleDifficultyChange(level)}
+            type="button"
+          >
+            {settings.label}
+          </button>
+        ))}
+      </section>
 
       <Board cells={cells} onSelect={handleSelect} />
       <Keypad

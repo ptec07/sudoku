@@ -7,6 +7,14 @@ type PuzzleOptions = {
   random?: RandomSource;
 };
 
+export type Difficulty = "easy" | "medium" | "hard";
+
+export const difficultySettings: Record<Difficulty, { label: string; clueCount: number }> = {
+  easy: { label: "Easy", clueCount: 44 },
+  medium: { label: "Medium", clueCount: 36 },
+  hard: { label: "Hard", clueCount: 30 },
+};
+
 export type PuzzleDefinition = {
   puzzle: Array<Digit | null>;
   solution: Digit[];
