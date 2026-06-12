@@ -1,7 +1,6 @@
 import type { Digit } from "../game/types";
 
 type KeypadProps = {
-  blockedDigits?: Digit[];
   disabled?: boolean;
   onClear: () => void;
   onDigit: (digit: Digit) => void;
@@ -10,7 +9,6 @@ type KeypadProps = {
 const digits: Digit[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export function Keypad({
-  blockedDigits = [],
   disabled = false,
   onClear,
   onDigit,
@@ -21,7 +19,7 @@ export function Keypad({
         <button
           className="key"
           data-testid={`key-${digit}`}
-          disabled={disabled || blockedDigits.includes(digit)}
+          disabled={disabled}
           key={digit}
           onClick={() => onDigit(digit)}
           type="button"

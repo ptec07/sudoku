@@ -15,7 +15,7 @@ import {
   undo,
 } from "./game/engine";
 import { createPuzzle, difficultySettings } from "./game/puzzle";
-import { canUndo, getBlockedDigits, getCellViews } from "./game/selectors";
+import { canUndo, getCellViews } from "./game/selectors";
 import type { CellIndex, Digit, EngineResult, GameState } from "./game/types";
 import type { Difficulty } from "./game/puzzle";
 
@@ -82,10 +82,6 @@ function App() {
   const [scoreRecords, setScoreRecords] = useState<ScoreRecord[]>(() => loadScoreRecords());
 
   const cells = useMemo(() => getCellViews(game), [game]);
-  const blockedDigits = useMemo(
-    () => (game.notesMode ? [] : getBlockedDigits(game)),
-    [game],
-  );
   const mistakesUsed = MAX_MISTAKES - game.mistakesRemaining;
   const inputDisabled = game.completed || game.mistakesRemaining === 0;
   const isGameOver = game.mistakesRemaining === 0 && !game.completed;
@@ -249,7 +245,6 @@ function App() {
 
       <Board cells={cells} onSelect={handleSelect} />
       <Keypad
-        blockedDigits={blockedDigits}
         disabled={inputDisabled}
         onClear={handleClear}
         onDigit={handleDigit}
