@@ -1,5 +1,6 @@
 type ToolbarProps = {
   canUndo: boolean;
+  disabled?: boolean;
   muted: boolean;
   notesMode: boolean;
   onMuteToggle: () => void;
@@ -10,6 +11,7 @@ type ToolbarProps = {
 
 export function Toolbar({
   canUndo,
+  disabled = false,
   muted,
   notesMode,
   onMuteToggle,
@@ -44,6 +46,7 @@ export function Toolbar({
         aria-pressed={notesMode}
         className="tool-button"
         data-testid="notes-button"
+        disabled={disabled}
         onClick={onNotesToggle}
         type="button"
       >

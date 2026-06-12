@@ -4,6 +4,7 @@ import { Board } from "./components/Board";
 import { Keypad } from "./components/Keypad";
 import { Toolbar } from "./components/Toolbar";
 import {
+  clearCell,
   createInitialState,
   isDigit,
   placeNumber,
@@ -27,6 +28,7 @@ function App() {
 
   const cells = useMemo(() => getCellViews(game), [game]);
   const mistakesUsed = 3 - game.mistakesRemaining;
+  const inputDisabled = game.completed || game.mistakesRemaining === 0;
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -34,6 +36,10 @@ function App() {
       if (isDigit(maybeDigit)) {
         event.preventDefault();
         run((state) => placeNumber(state, maybeDigit));
+      }
+      if (event.key === "Backspace" || event.key === "Delete") {
+        event.preventDefault();
+        run((state) => clearCell(state));
       }
 
       const selected = game.selected;
@@ -76,6 +82,10 @@ function App() {
     run((state) => placeNumber(state, digit));
   }
 
+  function handleClear() {
+    run((state) => clearCell(state));
+  }
+
   function handleUndo() {
     run((state) => undo(state));
   }
@@ -108,6 +118,7 @@ function App() {
         </div>
         <Toolbar
           canUndo={canUndo(game)}
+          disabled={inputDisabled}
           muted={game.muted}
           notesMode={game.notesMode}
           onMuteToggle={handleMuteToggle}
@@ -118,7 +129,7 @@ function App() {
       </header>
 
       <Board cells={cells} onSelect={handleSelect} />
-      <Keypad onDigit={handleDigit} />
+      <Keypad disabled={inputDisabled} onClear={handleClear} onDigit={handleDigit} />
 
       <section className="status-row" aria-label="Feedback status">
         <span>Sound: {game.muted ? "muted" : "soft taps"}</span>
@@ -133,6 +144,8 @@ function App() {
       >
         {game.completed
           ? "Puzzle complete. The board settles, precise and quiet."
+          : game.mistakesRemaining === 0
+            ? "Puzzle paused after three mistakes. Undo a move or start a new puzzle."
           : "Completion moment: solved areas breathe once, then the board settles. No confetti."}
       </section>
 

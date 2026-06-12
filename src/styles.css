@@ -227,7 +227,7 @@ h1 {
 
 .keypad {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
 }
 
@@ -249,6 +249,15 @@ h1 {
 .key:active,
 .cell:active {
   transform: scale(0.98);
+}
+
+.key:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.key-erase {
+  font-size: 14px;
 }
 
 .status-row {

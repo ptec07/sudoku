@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState, placeNumber, selectCell, setNotesMode, undo } from "./engine";
+import {
+  clearCell,
+  createInitialState,
+  placeNumber,
+  selectCell,
+  setNotesMode,
+  undo,
+} from "./engine";
 import {
   createPuzzle,
   createSeededRandom,
@@ -106,6 +113,66 @@ describe("Sudoku engine", () => {
 
     expect(undonePlacement.cells[2].value).toBeNull();
     expect(undoneNote.cells[2].notes).toEqual([]);
+  });
+
+  it("clears editable values, mistakes, and notes without touching givens", () => {
+    const selected = selectCell(createInitialState(puzzle, solution), 2).state;
+    const placed = placeNumber(selected, 4).state;
+    const clearedPlaced = clearCell(placed);
+
+    const notesMode = setNotesMode(selected, true).state;
+    const noted = placeNumber(notesMode, 4).state;
+    const clearedNotes = clearCell(noted);
+
+    const given = selectCell(createInitialState(puzzle, solution), 0).state;
+    const clearedGiven = clearCell(given);
+
+    expect(clearedPlaced.state.cells[2]).toMatchObject({ value: null, mistake: false, notes: [] });
+    expect(clearedPlaced.events).toEqual(["cellCleared"]);
+    expect(clearedNotes.state.cells[2].notes).toEqual([]);
+    expect(clearedGiven.state).toBe(given);
+    expect(clearedGiven.events).toEqual(["ignored"]);
+  });
+
+  it("removes placed digits from notes in related cells", () => {
+    let state = selectCell(createInitialState(puzzle, solution), 10).state;
+    state = setNotesMode(state, true).state;
+    state = placeNumber(state, 4).state;
+
+    state = selectCell(state, 2).state;
+    state = setNotesMode(state, false).state;
+    const result = placeNumber(state, 4);
+
+    expect(result.state.cells[10].notes).toEqual([]);
+  });
+
+  it("ignores entries after three mistakes are exhausted", () => {
+    let state = selectCell(createInitialState(puzzle, solution), 2).state;
+    state = placeNumber(state, 5).state;
+    state = placeNumber(state, 5).state;
+    state = placeNumber(state, 5).state;
+
+    const result = placeNumber(state, 4);
+
+    expect(result.state.cells[2].value).toBeNull();
+    expect(result.state.mistakesRemaining).toBe(0);
+    expect(result.events).toEqual(["ignored"]);
+  });
+
+  it("ignores edits after the puzzle is completed", () => {
+    const completed = {
+      ...createInitialState(puzzle, solution),
+      completed: true,
+      cells: createInitialState(puzzle, solution).cells.map((cell, index) =>
+        index === 2 ? { ...cell, value: null, given: false } : cell,
+      ),
+      selected: 2,
+    };
+
+    const result = placeNumber(completed, 4);
+
+    expect(result.state).toBe(completed);
+    expect(result.events).toEqual(["ignored"]);
   });
 
   it("safely ignores undo with empty history", () => {

@@ -58,7 +58,7 @@ export function setMuted(state: GameState, muted: boolean): EngineResult {
 
 export function placeNumber(state: GameState, digit: Digit): EngineResult {
   const selected = state.selected;
-  if (selected === null || !isDigit(digit)) {
+  if (!canEditBoard(state) || selected === null || !isDigit(digit)) {
     return { state, events: ["ignored"] };
   }
 
@@ -79,12 +79,18 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
     notes: [],
     mistake: !isCorrect,
   };
+  if (isCorrect) {
+    removePeerNotes(nextCells, selected, digit);
+  }
 
   const nextBase = pushHistory(state);
+  const mistakesRemaining = isCorrect
+    ? state.mistakesRemaining
+    : Math.max(0, state.mistakesRemaining - 1);
   const nextState: GameState = {
     ...nextBase,
     cells: nextCells,
-    mistakesRemaining: isCorrect ? state.mistakesRemaining : Math.max(0, state.mistakesRemaining - 1),
+    mistakesRemaining,
   };
 
   const events: GameEvent[] = isCorrect ? ["numberPlaced"] : ["mistake"];
@@ -101,13 +107,14 @@ export function placeNumber(state: GameState, digit: Digit): EngineResult {
       ...events,
       ...unitEvents,
       ...(completed && !state.completed ? (["puzzleCompleted"] as const) : []),
+      ...(!isCorrect && mistakesRemaining === 0 ? (["gameOver"] as const) : []),
     ],
   };
 }
 
 export function toggleNote(state: GameState, digit: Digit): EngineResult {
   const selected = state.selected;
-  if (selected === null || !isDigit(digit)) {
+  if (!canEditBoard(state) || selected === null || !isDigit(digit)) {
     return { state, events: ["ignored"] };
   }
 
@@ -126,6 +133,39 @@ export function toggleNote(state: GameState, digit: Digit): EngineResult {
   return {
     state: { ...pushHistory(state), cells: nextCells },
     events: ["noteToggled"],
+  };
+}
+
+export function clearCell(state: GameState): EngineResult {
+  const selected = state.selected;
+  if (!canEditBoard(state) || selected === null) {
+    return { state, events: ["ignored"] };
+  }
+
+  const cell = state.cells[selected];
+  if (!cell || cell.given || (cell.value === null && cell.notes.length === 0 && !cell.mistake)) {
+    return { state, events: ["ignored"] };
+  }
+
+  const nextCells = cloneCells(state.cells);
+  nextCells[selected] = {
+    ...cell,
+    value: null,
+    notes: [],
+    mistake: false,
+  };
+  const nextState = {
+    ...pushHistory(state),
+    cells: nextCells,
+    completed: false,
+  };
+
+  return {
+    state: {
+      ...nextState,
+      completedUnits: getCompletedUnits(nextState),
+    },
+    events: ["cellCleared"],
   };
 }
 
@@ -175,6 +215,35 @@ export function getCompletedUnits(state: GameState): string[] {
 function getNewCompletedUnitEvents(previous: GameState, next: GameState): Array<"unitCompleted"> {
   const before = new Set(previous.completedUnits);
   return getCompletedUnits(next).some((unit) => !before.has(unit)) ? ["unitCompleted"] : [];
+}
+
+function canEditBoard(state: GameState): boolean {
+  return !state.completed && state.mistakesRemaining > 0;
+}
+
+function removePeerNotes(cells: Cell[], placedIndex: CellIndex, digit: Digit): void {
+  cells.forEach((cell, index) => {
+    if (index !== placedIndex && arePeers(placedIndex, index) && cell.notes.includes(digit)) {
+      cells[index] = {
+        ...cell,
+        notes: cell.notes.filter((note) => note !== digit),
+      };
+    }
+  });
+}
+
+function arePeers(a: CellIndex, b: CellIndex): boolean {
+  const rowA = Math.floor(a / 9);
+  const colA = a % 9;
+  const rowB = Math.floor(b / 9);
+  const colB = b % 9;
+
+  return (
+    rowA === rowB ||
+    colA === colB ||
+    (Math.floor(rowA / 3) === Math.floor(rowB / 3) &&
+      Math.floor(colA / 3) === Math.floor(colB / 3))
+  );
 }
 
 function unitSolved(state: GameState, indices: CellIndex[]): boolean {

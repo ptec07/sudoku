@@ -17,6 +17,12 @@ test("plays the Quiet Core interaction path", async ({ page }) => {
   await page.getByTestId("key-4").click();
   await expect(editableCell).toContainText("4");
 
+  await page.getByTestId("erase-button").click();
+  await expect(editableCell).toBeEmpty();
+
+  await page.getByTestId("key-4").click();
+  await expect(editableCell).toContainText("4");
+
   await page.getByTestId("undo-button").click();
   await expect(editableCell).toBeEmpty();
 

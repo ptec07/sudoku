@@ -19,9 +19,11 @@ export type GameEvent =
   | "numberPlaced"
   | "noteToggled"
   | "mistake"
+  | "cellCleared"
   | "undo"
   | "unitCompleted"
   | "puzzleCompleted"
+  | "gameOver"
   | "ignored";
 
 export type GameState = {
